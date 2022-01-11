@@ -4,9 +4,8 @@ VERBOSE: True
 
 #---- PATHS
 MODEL_DIR: 'bin/'
-DATA_DIR: '../Datasets/'
 RESULTS_DIR: 'results/'
-LOG_FILE: 'logs/log.txt'
+LOG_DIR: 'logs/'
 MODEL_NAME: 'AcT'
 
 #---- DATASET

@@ -1,8 +1,9 @@
 # GENERAL LIBRARIES
 import os
-import numpy as np
 import argparse
+from datetime import datetime
 # MACHINE LEARNING LIBRARIES
+import numpy as np
 import tensorflow as tf
 # CUSTOM LIBRARIES
 from utils.tools import read_yaml, Logger
@@ -17,7 +18,13 @@ parser.add_argument('--search','-s', action='store_true', help='Run a random sea
     
 args = parser.parse_args()
 config = read_yaml(args.config)
-logger = Logger(config['LOG_FILE'])
+
+for entry in ['MODEL_DIR','RESULTS_DIR','LOG_DIR']:
+    if not os.path.exists(config[entry]):
+        os.mkdir(config[entry])
+
+now = datetime.now()
+logger = Logger(config['LOG_DIR']+now.strftime("%y%m%d%H%M%S"))
 
 
 # SET GPU 

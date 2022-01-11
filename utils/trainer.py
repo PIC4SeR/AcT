@@ -27,8 +27,7 @@ class Trainer:
         self.split = 1
         self.fold = 0
         self.trial = None
-        self.bin_path = self.config['MODEL_DIR'] # + str(self.split) + '_' + str(self.fold) + '.pth'
-        self.data_folder = self.config['DATA_DIR']
+        self.bin_path = self.config['MODEL_DIR']
         
         self.model_size = self.config['MODEL_SIZE']
         self.n_heads = self.config[self.model_size]['N_HEADS']
