@@ -1,22 +1,5 @@
-> Project: "project name"
+# AcT
 
-> Owner: "project owner name" 
+Action Transformer: A Self-Attention Model for Short-Time Human Action Recognition
 
-> Date: "yyyy:mm" 
-
----
-
-# Title
-
-## Description of the project
-...
-
-## Installation procedure
-...
-
-## User Guide
-...
-
-P.S. Compile requirements.txt file if needed
-
-More detailed information about markdown style for README.md file [HERE](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+![Alt Text](https://media.giphy.com/media/hEc4k5pN17GZq/giphy.gif)
