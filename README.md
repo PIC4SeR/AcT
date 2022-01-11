@@ -3,7 +3,6 @@
 <h1 align="center">  Action Transformer <br> A Self-Attention Model for Short-Time Human Action Recognition
 </h1>
 
-The overview of the action composition of MPOSE2021 is provided in the following image:
 <p align="center">
   <img src="https://ars.els-cdn.com/content/image/1-s2.0-S0031320321006634-gr1_lrg.jpg" alt="AcT Summary" width="450"/>
 </p>
@@ -40,6 +39,7 @@ python main.py -b
 ```
 
 That's it!
+
 This code uses the [mpose](https://pypi.org/project/mpose/) pip package, a friendly tool to download and process MPOSE2021 pose data.
 
 # Citations
