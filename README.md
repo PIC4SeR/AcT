@@ -71,5 +71,5 @@ If you want to use this repository for your research, please cite our work ([Act
 [6] Mazzia, V., Angarano, S., Salvetti, F., Angelini, F., & Chiaberge, M. (2021). Action Transformer: A Self-Attention Model for Short-Time Pose-Based Human Action Recognition. Pattern Recognition, 108487.
 
 <p align="center">
-  <img src="https://media.giphy.com/media/hEc4k5pN17GZq/giphy.gif" alt="What?!" />
+  <img src="docs/giphy.gif" alt="animated" />
 </p>
