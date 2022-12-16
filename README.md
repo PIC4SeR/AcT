@@ -42,6 +42,8 @@ That's it!
 
 This code uses the [mpose](https://pypi.org/project/mpose/) pip package, a friendly tool to download and process MPOSE2021 pose data.
 
+You can download **pretrained weights** from [here](https://drive.google.com/file/d/1NRMg3BWEDHC7aqCLp1mIUxYjuqPsQ8Ty/view?usp=sharing)!
+
 # Citations
 AcT is intended for scientific research purposes.
 If you want to use this repository for your research, please cite our work ([Action Transformer: A Self-Attention Model for Short-Time Pose-Based Human Action Recognition](https://arxiv.org/abs/2107.00606)) as well as [1-5].
