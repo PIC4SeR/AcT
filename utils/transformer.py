@@ -15,6 +15,7 @@
 # credits to https://www.tensorflow.org/tutorials/text/transformer
 
 import tensorflow as tf
+import numpy as np
 import copy
 
 
@@ -190,20 +191,22 @@ class Patches(tf.keras.layers.Layer):
         patches = tf.reshape(patches, [batch_size, -1, patch_dims])
         return patches
     
-    
 
 class PatchClassEmbedding(tf.keras.layers.Layer):
-    def __init__(self, d_model, n_patches, kernel_initializer='he_normal', **kwargs):
+    def __init__(self, d_model, n_patches, pos_emb=None, kernel_initializer='he_normal', **kwargs):
         super(PatchClassEmbedding, self).__init__(**kwargs)
         self.d_model = d_model
         self.n_tot_patches = n_patches + 1
+        self.pos_emb = pos_emb
         self.kernel_initializer = kernel_initializer
         self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
-        self.class_embed = self.add_weight(shape=(1, 1, self.d_model), initializer=self.kernel_initializer) # extra learnable class
-        self.position_embedding = tf.keras.layers.Embedding(
-            input_dim=(self.n_tot_patches), output_dim=self.d_model
-        )
-        
+        self.class_embed = self.add_weight(shape=(1, 1, self.d_model), initializer=self.kernel_initializer, name="class_token")
+        if self.pos_emb is not None:
+            self.pos_emb = tf.convert_to_tensor(np.load(self.pos_emb))
+            self.lap_position_embedding = tf.keras.layers.Embedding(input_dim=self.pos_emb.shape[0], output_dim=self.d_model)
+        else:
+            self.position_embedding = tf.keras.layers.Embedding(input_dim=(self.n_tot_patches), output_dim=self.d_model)
+
     def get_config(self):
         config = {
             'd_model': self.d_model,
@@ -215,8 +218,16 @@ class PatchClassEmbedding(tf.keras.layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
     
     def call(self, inputs):
-        positions = tf.range(start=0, limit=self.n_tot_patches, delta=1)
         x =  tf.repeat(self.class_embed, tf.shape(inputs)[0], axis=0)
         x = tf.concat((x, inputs), axis=1)
-        encoded = x + self.position_embedding(positions)
-        return encoded    
+        if self.pos_emb is None:
+            positions = tf.range(start=0, limit=self.n_tot_patches, delta=1)
+            pe = self.position_embedding(positions)
+        else:
+            #pe = tf.concat([tf.zeros((self.n_tot_patches-1, 1)), self.pos_emb], axis=1) # N*(N+1)
+            pe = self.pos_emb
+            pe = tf.reshape(pe, [1, -1])
+            pe = self.lap_position_embedding(pe)
+            #pe = tf.reshape(pe, [self.n_tot_patches, self.d_model])
+        encoded = x + pe
+        return encoded

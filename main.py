@@ -9,7 +9,6 @@ import tensorflow as tf
 from utils.tools import read_yaml, Logger
 from utils.trainer import Trainer
 
-
 # LOAD CONFIG 
 parser = argparse.ArgumentParser(description='Process some input')
 parser.add_argument('--config', default='utils/config.yaml', type=str, help='Config path', required=False)    
@@ -24,11 +23,13 @@ for entry in ['MODEL_DIR','RESULTS_DIR','LOG_DIR']:
         os.mkdir(config[entry])
 
 now = datetime.now()
-logger = Logger(config['LOG_DIR']+now.strftime("%y%m%d%H%M%S"))
+logger = Logger(config['LOG_DIR']+now.strftime("%y%m%d%H%M%S")+'.txt')
 
 
 # SET GPU 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 gpus = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_visible_devices(gpus[config['GPU']], 'GPU')
 tf.config.experimental.set_memory_growth(gpus[config['GPU']], True)

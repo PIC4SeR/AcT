@@ -1,5 +1,5 @@
 #---- GENERAL
-GPU: 0
+GPU: 1
 VERBOSE: True
 
 #---- PATHS
@@ -9,28 +9,40 @@ LOG_DIR: 'logs/'
 MODEL_NAME: 'AcT'
 
 #---- DATASET
-SPLITS: 3
-FOLDS: 10
-SEEDS: [11331] #, 11435, 12123, 53453, 42344, 24234, 65747, 84443, 29345, 99543]
+SPLITS: 1
+FOLDS: 1
+SEEDS: [11331, 11435, 12123, 53453, 42344, 24234, 65747, 84443, 29345, 99543]
 VAL_SIZE: 0.1
-FRAMES: 30
-CHANNELS: 4
-DATASET: 'openpose'
+CHANNELS: 3
+SUBSAMPLE: 1
+DATASET: 'posenet'
 openpose:
     KEYPOINTS: 13
+    CLASSES: 20
+    FRAMES: 30
 posenet:
-    KEYPOINTS: 17
-CLASSES: 20
+    KEYPOINTS: 13
+    CLASSES: 20
+    FRAMES: 30
+movenet:
+    KEYPOINTS: 13
+    CLASSES: 20
+    FRAMES: 30
+kinetics:
+    KEYPOINTS: 18
+    CLASSES: 400
+    FRAMES: 300
 LABELS: ['standing','check-watch','cross-arms','scratch-head','sit-down','get-up','turn-around','walking','wave1','boxing',
          'kicking','pointing','pick-up','bending','hands-clapping','wave2','jogging','jumping','pjump','running']
 
 #---- AUGMENTATION
 FLIP_P: 0.5
-RN_STD: 0.03
+RN_STD: 0.0
 
 #---- MODEL
 PATCH_SIZE: 1
 MODEL_SIZE: 'micro'
+POS_EMB: #'utils/pos_emb.npy'
 micro:        
     N_HEADS: 1
     N_LAYERS: 4
@@ -57,11 +69,13 @@ large:
     MLP: 512
 
 #---- TRAINING SETTINGS 
-N_EPOCHS: 350       
+SCHEDULER: True
+N_EPOCHS: 300       
 BATCH_SIZE: 512
 WEIGHT_DECAY: 0.0001  
 WARMUP_PERC: 0.3  
 STEP_PERC: 0.8
+LR_MULT: 1
 
 #---- RANDOM SEARCH
-N_TRIALS: 256
+N_TRIALS: 5
