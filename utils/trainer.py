@@ -1,13 +1,16 @@
 # GENERAL LIBRARIES 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+import absl.logging
+absl.logging.set_verbosity(absl.logging.ERROR)
+
 import math
 import numpy as np
 import joblib
 from pathlib import Path
-import gc
 # MACHINE LEARNING LIBRARIES
 import sklearn
 import tensorflow as tf
-import tensorflow_datasets as tfds
 import tensorflow_addons as tfa
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
@@ -19,6 +22,7 @@ from utils.transformer import TransformerEncoder, PatchClassEmbedding, Patches
 from utils.data import load_mpose, load_kinetics, random_flip, random_noise, one_hot
 from utils.tools import CustomSchedule, CosineSchedule
 from utils.tools import Logger
+
 
 # TRAINER CLASS 
 class Trainer:
@@ -36,10 +40,11 @@ class Trainer:
         self.embed_dim = self.config[self.model_size]['EMBED_DIM']
         self.dropout = self.config[self.model_size]['DROPOUT']
         self.mlp_head_size = self.config[self.model_size]['MLP']
-        self.activation = tfa.activations.gelu
+        self.activation = tf.nn.gelu
         self.d_model = 64 * self.n_heads
         self.d_ff = self.d_model * 4
         self.pos_emb = self.config['POS_EMB']
+
         
     def build_act(self, transformer):
         inputs = tf.keras.layers.Input(shape=(self.config[self.config['DATASET']]['FRAMES'] // self.config['SUBSAMPLE'], 
@@ -53,6 +58,7 @@ class Trainer:
         outputs = tf.keras.layers.Dense(self.config[self.config['DATASET']]['CLASSES'])(x)
         return tf.keras.models.Model(inputs, outputs)
 
+    
     def get_model(self):
         transformer = TransformerEncoder(self.d_model, self.n_heads, self.d_ff, self.dropout, self.activation, self.n_layers)
         self.model = self.build_act(transformer)
@@ -61,9 +67,10 @@ class Trainer:
         self.test_steps = np.ceil(float(self.test_len)/self.config['BATCH_SIZE'])
         
         if self.config['SCHEDULER']:
-            lr = CustomSchedule(self.d_model*10**self.config['LR_MULT'], 
+            lr = CustomSchedule(self.d_model, 
                                 warmup_steps=self.train_steps*self.config['N_EPOCHS']*self.config['WARMUP_PERC'],
                                 decay_step=self.train_steps*self.config['N_EPOCHS']*self.config['STEP_PERC'])
+
         else:
             lr = 3 * 10**self.config['LR_MULT']
         
@@ -73,13 +80,15 @@ class Trainer:
                            loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True, label_smoothing=0.1),
                            metrics=[tf.keras.metrics.CategoricalAccuracy(name="accuracy")])
 
-        self.name_model_bin = self.config['MODEL_NAME'] + '_' + self.config['MODEL_SIZE'] + '_' + str(self.split) + '_' + str(self.fold) + '.h5'
+        self.name_model_bin = f"{self.config['MODEL_NAME']}_{self.config['MODEL_SIZE']}_{self.split}_{self.fold}.h5"
 
         self.checkpointer = tf.keras.callbacks.ModelCheckpoint(self.bin_path + self.name_model_bin,
                                                                monitor="val_accuracy",
                                                                save_best_only=True,
                                                                save_weights_only=True)
-
+        return
+    
+    
     def get_data(self):
         if self.config['DATASET'] == 'kinetics':
             train_gen, val_gen, test_gen, self.train_len, self.test_len = load_kinetics(self.config, self.fold)
@@ -90,7 +99,8 @@ class Trainer:
             self.ds_test = tf.data.Dataset.from_generator(test_gen, output_types=('float32', 'uint8'))
             
         else:
-            X_train, y_train, X_test, y_test = load_mpose(self.config['DATASET'], self.split, verbose=False)
+            X_train, y_train, X_test, y_test = load_mpose(self.config['DATASET'], self.split, 
+                                                          legacy=self.config['LEGACY'], verbose=False)
             self.train_len = len(y_train)
             self.test_len = len(y_test)
             X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
@@ -103,25 +113,24 @@ class Trainer:
             self.ds_test = tf.data.Dataset.from_tensor_slices((X_test, y_test))
             
         self.ds_train = self.ds_train.map(lambda x,y : one_hot(x,y,self.config[self.config['DATASET']]['CLASSES']), 
-                                num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        #ds_train = ds_train.cache()
-        #ds_train = ds_train.map(random_flip, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        #ds_train = ds_train.map(random_noise, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        self.ds_train = self.ds_train.shuffle(1000)
+                                          num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        self.ds_train = self.ds_train.cache()
+        self.ds_train = self.ds_train.map(random_flip, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        self.ds_train = self.ds_train.map(random_noise, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        self.ds_train = self.ds_train.shuffle(X_train.shape[0])
         self.ds_train = self.ds_train.batch(self.config['BATCH_SIZE'])
-        self.ds_train = self.ds_train.prefetch(tf.data.experimental.AUTOTUNE).repeat(self. config['N_EPOCHS'])
-
+        self.ds_train = self.ds_train.prefetch(tf.data.experimental.AUTOTUNE)
         
         self.ds_val = self.ds_val.map(lambda x,y : one_hot(x,y,self.config[self.config['DATASET']]['CLASSES']), 
-                                num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        #self.ds_val = self.ds_val.cache()
+                                      num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        self.ds_val = self.ds_val.cache()
         self.ds_val = self.ds_val.batch(self.config['BATCH_SIZE'])
         self.ds_val = self.ds_val.prefetch(tf.data.experimental.AUTOTUNE)
 
         
         self.ds_test = self.ds_test.map(lambda x,y : one_hot(x,y,self.config[self.config['DATASET']]['CLASSES']), 
-                                num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        #self.ds_test = self.ds_test.cache()
+                                        num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        self.ds_test = self.ds_test.cache()
         self.ds_test = self.ds_test.batch(self.config['BATCH_SIZE'])
         self.ds_test = self.ds_test.prefetch(tf.data.experimental.AUTOTUNE)
         
@@ -150,8 +159,9 @@ class Trainer:
                        epochs=self.config['N_EPOCHS'], initial_epoch=0,
                        validation_data=self.ds_val,
                        callbacks=[self.checkpointer], verbose=self.config['VERBOSE'],
-                       steps_per_epoch=int(self.train_steps*0.9),
-                       validation_steps=self.train_steps//9)
+                       #steps_per_epoch=int(self.train_steps*0.9),
+                       #validation_steps=self.train_steps//9
+                      )
         
         self.model.load_weights(self.bin_path+self.name_model_bin)            
         _, accuracy_test = self.model.evaluate(self.ds_test, steps=self.test_steps)
@@ -170,9 +180,6 @@ class Trainer:
 
         text = f"Accuracy Test: {accuracy_test} <> Balanced Accuracy: {balanced_accuracy}\n"
         self.logger.save_log(text)
-        
-        del X, y, self.ds_train, self.ds_test, self.ds_val, self.model
-        gc.collect()
         
         return accuracy_test, balanced_accuracy
     
@@ -198,8 +205,6 @@ class Trainer:
 
                 acc_list.append(acc)
                 bal_acc_list.append(bal_acc)
-
-                gc.collect()
                 
             np.save(self.config['RESULTS_DIR'] + self.config['MODEL_NAME'] + '_' + self.config['DATASET'] + f'_{split}_accuracy.npy', acc_list)
             np.save(self.config['RESULTS_DIR'] + self.config['MODEL_NAME'] + '_' + self.config['DATASET'] + f'_{split}_balanced_accuracy.npy', bal_acc_list)

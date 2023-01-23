@@ -1,6 +1,6 @@
 #---- GENERAL
-GPU: 1
-VERBOSE: True
+GPU: 0
+VERBOSE: False
 
 #---- PATHS
 MODEL_DIR: 'bin/'
@@ -9,19 +9,28 @@ LOG_DIR: 'logs/'
 MODEL_NAME: 'AcT'
 
 #---- DATASET
-SPLITS: 1
-FOLDS: 1
+SPLITS: 3
+FOLDS: 10
 SEEDS: [11331, 11435, 12123, 53453, 42344, 24234, 65747, 84443, 29345, 99543]
 VAL_SIZE: 0.1
-CHANNELS: 3
+CHANNELS: 4
 SUBSAMPLE: 1
-DATASET: 'posenet'
+DATASET: 'openpose_legacy'
+LEGACY: False
 openpose:
     KEYPOINTS: 13
     CLASSES: 20
     FRAMES: 30
 posenet:
     KEYPOINTS: 13
+    CLASSES: 20
+    FRAMES: 30
+openpose_legacy:
+    KEYPOINTS: 13
+    CLASSES: 20
+    FRAMES: 30
+posenet_legacy:
+    KEYPOINTS: 17
     CLASSES: 20
     FRAMES: 30
 movenet:
@@ -37,10 +46,10 @@ LABELS: ['standing','check-watch','cross-arms','scratch-head','sit-down','get-up
 
 #---- AUGMENTATION
 FLIP_P: 0.5
-RN_STD: 0.0
+RN_STD: 0.03
 
 #---- MODEL
-PATCH_SIZE: 1
+#PATCH_SIZE: 1
 MODEL_SIZE: 'micro'
 POS_EMB: #'utils/pos_emb.npy'
 micro:        
@@ -70,7 +79,7 @@ large:
 
 #---- TRAINING SETTINGS 
 SCHEDULER: True
-N_EPOCHS: 300       
+N_EPOCHS: 350       
 BATCH_SIZE: 512
 WEIGHT_DECAY: 0.0001  
 WARMUP_PERC: 0.3  

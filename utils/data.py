@@ -19,6 +19,30 @@ from mpose import MPOSE
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
+
+labels = { # 20 Classes
+    "standing":0,
+    "check-watch":1,
+    "cross-arms":2,
+    "scratch-head":3,
+    "sit-down":4,
+    "get-up":5,
+    "turn":6, 
+    "walk":7, 
+    "wave1":8,
+    "box":9,
+    "kick":10,
+    "point":11, 
+    "pick-up":12,
+    "bend":13,
+    "hands-clap":14,
+    "wave2":15,
+    "jog":16,
+    "jump":17,
+    "pjump":18,
+    "run":19}
+
+
 def load_kinetics(config, fold=0):
     
     X_train = np.load('/media/Datasets/kinetics/train_data_joint.npy') #[...,0] # get first pose
@@ -46,21 +70,32 @@ def load_kinetics(config, fold=0):
     
     return train_gen, val_gen, test_gen, len(y_train), len(y_test)
 
-def load_mpose(dataset, split, verbose=False):
+
+def load_mpose(dataset, split, verbose=False, legacy=False):
     
-    dataset = MPOSE(pose_extractor=dataset, 
+    if legacy:
+        return load_dataset_legacy(data_folder=f'datasets/openpose_bm/split{split}/base_vars/')
+    
+    d = MPOSE(pose_extractor=dataset, 
                     split=split, 
                     preprocess=None, 
-                    velocities=False, 
-                    remove_zip=False,
-                    verbose=verbose)
-    dataset.reduce_keypoints()
-    dataset.scale_and_center()
-    #dataset.remove_confidence()
-    dataset.flatten_features()
-    #dataset.reduce_labels()
+                    velocities=True, 
+                    remove_zip=False)
     
-    return dataset.get_data()
+    if 'legacy' not in dataset:
+        d.reduce_keypoints()
+        d.scale_and_center()
+        d.remove_confidence()
+        d.flatten_features()
+        #d.reduce_labels()
+        return d.get_data()
+    
+    elif 'openpose' in dataset:
+        X_train, y_train, X_test, y_test = d.get_data()
+        return X_train, transform_labels(y_train), X_test, transform_labels(y_test)
+    else:
+        return d.get_data()
+        
 
 def random_flip(x, y):
     time_steps = x.shape[0]
@@ -80,15 +115,18 @@ def random_flip(x, y):
     x = tf.reshape(x, (time_steps,-1))
     return x, y
 
+
 def random_noise(x, y):
     time_steps = tf.shape(x)[0]
     n_features = tf.shape(x)[1]
-    noise = tf.random.normal((time_steps, n_features), mean=0.0, stddev=0.05, dtype=tf.float64)
+    noise = tf.random.normal((time_steps, n_features), mean=0.0, stddev=0.03, dtype=tf.float64)
     x = x + noise
     return x, y
 
+
 def one_hot(x, y, n_classes):
     return x, tf.one_hot(y, n_classes)
+
 
 def kinetics_generator(X, y, batch_size):
     while True:
@@ -99,8 +137,34 @@ def kinetics_generator(X, y, batch_size):
         for count in range(len(y)):
             yield (X[count], y[count])
         
+        
 def callable_gen(_gen):
         def gen():
             for x,y in _gen:
                  yield x,y
         return gen
+    
+    
+def transform_labels(y):
+    y_new = []
+    for i in y:
+        y_new.append(labels[i])
+    return np.array(y_new)
+
+
+def load_dataset_legacy(data_folder, verbose=True):
+    X_train = np.load(data_folder + 'X_train.npy')
+    y_train = np.load(data_folder + 'Y_train.npy', allow_pickle=True)
+    y_train = transform_labels(y_train)
+    
+    X_test = np.load(data_folder + 'X_test.npy')
+    y_test = np.load(data_folder + 'Y_test.npy', allow_pickle=True)
+    y_test = transform_labels(y_test)
+    
+    if verbose:
+        print(f"X_train shape: {X_train.shape}")
+        print(f"y_train shape: {y_train.shape}")
+
+        print(f"X_test shape: {X_test.shape}")
+        print(f"y_test shape: {y_test.shape}")
+    return X_train, y_train, X_test, y_test
