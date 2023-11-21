@@ -162,10 +162,16 @@ class Trainer:
                        #steps_per_epoch=int(self.train_steps*0.9),
                        #validation_steps=self.train_steps//9
                       )
-        
-        self.model.load_weights(self.bin_path+self.name_model_bin)            
+        accuracy_test, balanced_accuracy = self.evaluate(weights=self.bin_path+self.name_model_bin)      
+        return accuracy_test, balanced_accuracy
+
+    def evaluate(self, weights=None):
+        if weights is not None:
+            self.model.load_weights(self.bin_path+self.name_model_bin)  
+        else:
+            self.model.load_weights(self.config['WEIGHTS'])
+
         _, accuracy_test = self.model.evaluate(self.ds_test, steps=self.test_steps)
-        
         if self.config['DATASET'] == 'kinetics':
             g = list(self.ds_test.take(self.test_steps).as_numpy_iterator())
             X = [e[0] for e in g]
@@ -181,6 +187,12 @@ class Trainer:
         text = f"Accuracy Test: {accuracy_test} <> Balanced Accuracy: {balanced_accuracy}\n"
         self.logger.save_log(text)
         
+        return accuracy_test, balanced_accuracy
+
+    def do_test(self):
+        self.get_data()
+        self.get_model()
+        accuracy_test, balanced_accuracy = self.evaluate()
         return accuracy_test, balanced_accuracy
     
     def objective(self, trial):

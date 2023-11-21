@@ -14,7 +14,8 @@ from utils.trainer import Trainer
 
 # LOAD CONFIG 
 parser = argparse.ArgumentParser(description='Process some input')
-parser.add_argument('--config', default='utils/config.yaml', type=str, help='Config path', required=False)    
+parser.add_argument('--config', default='utils/config.yaml', type=str, help='Config path', required=False)   
+parser.add_argument('--test', '-t', action='store_true', help='Run a test (specify weights in the config file)') 
 parser.add_argument('--benchmark','-b', action='store_true', help='Run a benchmark') 
 parser.add_argument('--search','-s', action='store_true', help='Run a random search')
     
@@ -48,8 +49,13 @@ if args.benchmark:
 elif args.search:
     # RUN RANDOM SEARCH
     trainer.do_random_search()
+
+elif args.test:
+    # RUN TEST
+    trainer.do_test()
     
 else:
     print('Nothing to do! Specify one of the following arguments:')
     print('\t --benchmark [-b]: run a benchmark')
     print('\t --search [-s]: run a random search')
+    print('\t --test [-t]: run a test')
