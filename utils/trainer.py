@@ -135,12 +135,11 @@ class Trainer:
         self.ds_test = self.ds_test.prefetch(tf.data.experimental.AUTOTUNE)
         
     def get_random_hp(self):
-        # self.config['RN_STD'] = self.trial.suggest_discrete_uniform("RN_STD", 0.0, 0.03, 0.01)
-        self.config['WEIGHT_DECAY'] = self.trial.suggest_discrete_uniform("WD", 1e-5, 1e-3, 1e-5)
-        self.config['N_EPOCHS'] = int(self.trial.suggest_discrete_uniform("EPOCHS", 50, 100, 10))
-        self.config['WARMUP_PERC'] = self.trial.suggest_discrete_uniform("WARMUP_PERC", 0.1, 0.4, 0.1)
-        self.config['LR_MULT'] = self.trial.suggest_discrete_uniform("LR_MULT", -5, -4, 1)
-        self.config['SUBSAMPLE'] = int(self.trial.suggest_discrete_uniform("SUBSAMPLE", 4, 8, 4))
+        # self.config['RN_STD'] = self.trial.suggest_float("RN_STD", 0, 0.03, 0.01)
+        self.config['WEIGHT_DECAY'] = self.trial.suggest_float("WD", 1e-5, 1e-3, step=1e-5)
+        self.config['N_EPOCHS'] = int(self.trial.suggest_float("EPOCHS", 50, 100, step=10))
+        self.config['WARMUP_PERC'] = self.trial.suggest_float("WARMUP_PERC", 0.1, 0.4, step=0.1)
+        self.config['LR_MULT'] = self.trial.suggest_float("LR_MULT", -5, -4, step=1)
         self.config['SCHEDULER'] = self.trial.suggest_categorical("SCHEDULER", [False, False])
         
         # self.logger.save_log('\nRN_STD: {:.2e}'.format(self.config['RN_STD']))
@@ -148,7 +147,6 @@ class Trainer:
         self.logger.save_log('WARMUP_PERC: {:.2e}'.format(self.config['WARMUP_PERC']))
         self.logger.save_log('WEIGHT_DECAY: {:.2e}'.format(self.config['WEIGHT_DECAY']))
         self.logger.save_log('LR_MULT: {:.2e}'.format(self.config['LR_MULT']))
-        self.logger.save_log('SUBSAMPLE: {}'.format(self.config['SUBSAMPLE']))
         self.logger.save_log('SCHEDULER: {}\n'.format(self.config['SCHEDULER']))
         
     def do_training(self):

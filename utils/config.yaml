@@ -90,4 +90,4 @@ LR_MULT: 1
 N_TRIALS: 5
 
 #---- TEST SETTINGS
-WEIGHTS: 'bin/AcT_micro_1_0.h5'
+WEIGHTS: 'bin/AcT_micro.h5'
